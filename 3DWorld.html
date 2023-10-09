@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3Dworldad</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="https://threejs.org/build/three.js"></script>
+    <script>
+
+        // 创建场景
+        var scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xFFFFFF); 
+        // 创建相机
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+        // 创建渲染器
+        var renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 创建方块的几何体
+        var geometry = new THREE.BoxGeometry();
+
+        // 创建方块的材质
+        var materials = [
+            new THREE.MeshStandardMaterial({ emissive: 0xff0000 }), // 前面 - 深红色
+            new THREE.MeshStandardMaterial({ emissive: 0x00fff0 }), // 后面 - 深绿色
+            new THREE.MeshStandardMaterial({ emissive: 0x0000ff }), // 左侧 - 深蓝色
+            new THREE.MeshStandardMaterial({ emissive: 0xffff00 }), // 右侧 - 深黄色
+            new THREE.MeshStandardMaterial({ emissive: 0xff00ff }), // 顶部 - 深紫色
+            new THREE.MeshStandardMaterial({ emissive: 0x00ffff }), // 底部 - 深青色
+        ];
+
+        // 将不同颜色的材质分配给方块的每个面
+        
+        var cube = new THREE.Mesh(geometry, materials);
+
+        // 将方块加入到场景中
+        scene.add(cube);
+        cube.position.y = -0.3; // 修改方块的Y坐标值
+
+        // 创建地面
+        var geometry = new THREE.PlaneGeometry(10000, 10000);
+        var material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        var ground = new THREE.Mesh(geometry, material);
+        scene.add(ground);
+        ground.rotation.x = Math.PI / -2;
+        ground.position.y = -0.8; // 修改地面的Y坐标值-（0.5 + x）
+
+
+        // 监听键盘事件
+        var keys = {
+            W: false,
+            A: false,
+            S: false,
+            D: false,
+            left: false,
+            right: false
+        };
+
+        // 监听按键按下事件
+        document.addEventListener('keydown', onKeyDown, false);
+
+        // 监听按键松开事件
+        document.addEventListener('keyup', onKeyUp, false);
+
+        // 初始化相机的位置和旋转角度
+        var cameraPosition = new THREE.Vector3(0, 0, 5);
+        var cameraRotationY = 0;
+
+        // 跳跃状态
+        var isJumping = false;
+        var jumpHeight = 0.5; // 跳跃高度
+        var jumpSpeed = 0.05; // 跳跃速度
+                
+        //跳跃函数
+        function jump() {
+            if (!isJumping) {
+                isJumping = true;
+                var initialPosition = cube.position.y;
+                var targetPosition = initialPosition + jumpHeight;
+
+                function animateJump() {
+                    if (cube.position.y < targetPosition) {
+                        cube.position.y += jumpSpeed;
+                        requestAnimationFrame(animateJump);
+                    } else {
+                        isJumping = false;
+                        cube.position.y = initialPosition;
+                    }
+                }
+
+                animateJump();
+            }
+        }
+
+        // 按键按下事件处理函数
+        function onKeyDown(event) {
+            var keyCode = event.keyCode;
+            switch (keyCode) {
+                case 87: // W键
+                    keys.W = true;
+                    break;
+                case 65: // A键
+                    keys.A = true;
+                    break;
+                case 83: // S键
+                    keys.S = true;
+                    break;
+                case 68: // D键
+                    keys.D = true;
+                    break;
+                case 37: // 左键
+                    keys.left = true;
+                    break;
+                case 38: // 上键
+                    jump();
+                    break;
+                case 39: // 右键
+                    keys.right = true;
+                    break;
+            }
+        }
+
+        // 按键松开事件处理函数
+        function onKeyUp(event) {
+            var keyCode = event.keyCode;
+            switch (keyCode) {
+                case 87: // W键
+                    keys.W = false;
+                    break;
+                case 65: // A键
+                    keys.A = false;
+                    break;
+                case 83: // S键
+                    keys.S = false;
+                    break;
+                case 68: // D键
+                    keys.D = false;
+                    break;
+                case 37: // 左键
+                    keys.left = false;
+                    break;
+                case 38: // 上键
+                    isJumping = false;
+                    break;
+                case 39: // 右键
+                    keys.right = false;
+                    break;
+            }
+        }
+
+        // 渲染循环
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (keys.W) {
+                // 向前移动
+                var forward = new THREE.Vector3(0, 0, -0.08);
+                forward.applyQuaternion(camera.quaternion);
+                cameraPosition.add(forward);
+            }
+            if (keys.A) {
+                // 往左移动
+                var forward = new THREE.Vector3(-0.08, 0, 0);
+                forward.applyQuaternion(camera.quaternion);
+                cameraPosition.add(forward);
+            }
+            if (keys.S) {
+                // 向后移动
+                var backward = new THREE.Vector3(0, 0, 0.08);
+                backward.applyQuaternion(camera.quaternion);
+                cameraPosition.add(backward);
+            }
+            if (keys.D) {
+                // 往右移动
+                var forward = new THREE.Vector3(0.08, 0, 0);
+                forward.applyQuaternion(camera.quaternion);
+                cameraPosition.add(forward);
+            }
+
+            if (keys.left) cameraRotationY += 0.03; 
+            if (keys.right) cameraRotationY -= 0.03;
+
+            // 更新相机的位置和旋转
+            camera.position.copy(cameraPosition);
+            camera.rotation.set(0, cameraRotationY, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>
